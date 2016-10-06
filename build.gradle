@@ -4,7 +4,7 @@ version '0.1'
 apply plugin: 'java'
 apply plugin: 'application'
 
-mainClassName = 'ru.chirikhin.tcp2speed.Main'
+mainClassName = 'ru.chirikhin.tcp2speed.server.Main'
 
 repositories {
     jcenter()
@@ -12,4 +12,14 @@ repositories {
 
 dependencies {
     compile 'apache-log4j:log4j:1.2.15'
+}
+
+task server {
+    mainClassName = 'ru.chirikhin.tcp2speed.server.Main'
+    run.execute()
+}
+
+task client {
+    mainClassName = 'ru.chirikhin.tcp2speed.client.Main'
+    run.execute()
 }
