@@ -10,7 +10,8 @@ public class Main {
             serverThread.start();
             serverThread.join();
         } catch (Throwable t) {
-            System.out.println(t.getMessage());
+            t.printStackTrace();
+            System.out.println("Error " + t.getMessage());
         }
     }
 }

@@ -12,7 +12,8 @@ public class Main {
             clientThread.join();
 
         } catch (Throwable t) {
-            System.err.println(t.getMessage());
+            t.printStackTrace();
+            System.err.println("Error" + t.getMessage());
         }
     }
 }

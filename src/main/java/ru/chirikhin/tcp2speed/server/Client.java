@@ -1,19 +1,20 @@
 package ru.chirikhin.tcp2speed.server;
 
-import java.net.Socket;
+import java.nio.channels.SocketChannel;
 
 public class Client {
-    private final Socket socket;
+    private final SocketChannel socketChannel;
 
-    private int countOfBytes = 0;
+    private long countOfBytes = 0;
 
 
-    public Client(Socket socket) {
-        if (null == socket) {
+    public Client(SocketChannel socketChannel) {
+        if (null == socketChannel) {
             throw new IllegalArgumentException("Socket can not be null");
         }
 
-        this.socket = socket;
+
+        this.socketChannel = socketChannel;
     }
 
     public void addBytes(int k) {
@@ -25,10 +26,10 @@ public class Client {
     }
 
     public String getHostName() {
-        return socket.getInetAddress().getHostName();
+        return socketChannel.socket().getInetAddress().getHostName();
     }
 
-    public int getCountOfBytes() {
+    public long getCountOfBytes() {
         return countOfBytes;
     }
 }

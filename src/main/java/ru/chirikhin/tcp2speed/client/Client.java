@@ -9,7 +9,7 @@ import java.nio.channels.SocketChannel;
 
 public class Client implements Runnable {
     private final static Logger logger = Logger.getLogger(Client.class);
-    private final static int BUFFER_SIZE = 1024;
+    private final static int BUFFER_SIZE = 1024 * 1024;
 
     private final SocketChannel channel;
 
@@ -32,19 +32,20 @@ public class Client implements Runnable {
 
     public void run() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-        byteBuffer.clear();
-        byteBuffer.put(new byte[BUFFER_SIZE]);
-        byteBuffer.flip();
+
+        byte[] buffer = new byte[BUFFER_SIZE];
 
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 byteBuffer.clear();
-                byteBuffer.put(new byte[BUFFER_SIZE]);
+                byteBuffer.put(buffer);
                 byteBuffer.flip();
 
                 while(byteBuffer.hasRemaining()){
                     channel.write(byteBuffer);
                 }
+
+                byteBuffer.flip();
             }
         } catch (IOException e) {
             logger.error("Can't send symbol");

@@ -1,8 +1,10 @@
 package ru.chirikhin.tcp2speed.server;
 
 import org.apache.log4j.Logger;
+import sun.awt.image.ImageWatched;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -12,14 +14,14 @@ import java.util.*;
 public class Server implements Runnable {
 
     private static final Logger logger = Logger.getLogger(Server.class);
-    private static final int MILLIS_TO_COUNT_SPEED = 2000;
+    private static final int MILLIS_TO_COUNT_SPEED = 1000;
 
-    private final int COUNT_OF_BYTES = 1024;
+    private final int COUNT_OF_BYTES = 1024 * 1024;
     private final ByteBuffer byteBuffer = ByteBuffer.allocate(COUNT_OF_BYTES);
 
-    private final HashMap<Channel, Client> clientChannelHashMap = new HashMap<Channel, Client>();
+    private final LinkedList<Client> clientLinkedList = new LinkedList<>();
     private final Selector selector;
-    private final ServerSocket serverSocket;
+    private final ServerSocketChannel serverSocketChannel;
 
     public Server(int port) {
         if (port < 0) {
@@ -27,12 +29,14 @@ public class Server implements Runnable {
         }
 
         try {
-            serverSocket = new ServerSocket(port);
-            ServerSocketChannel serverSocketChannel = serverSocket.getChannel();
+            serverSocketChannel = ServerSocketChannel.open();
+
+            serverSocketChannel.socket().bind(new InetSocketAddress(port));
             serverSocketChannel.configureBlocking(false);
+
             selector = Selector.open();
 
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT | SelectionKey.OP_READ);
+            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         } catch (IOException e) {
             throw new IllegalArgumentException("Can not create socket or selector", e);
         }
@@ -43,7 +47,19 @@ public class Server implements Runnable {
 
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                long timeoutForSelect = System.currentTimeMillis() - startTime;
+                long timeoutForSelect = MILLIS_TO_COUNT_SPEED - (System.currentTimeMillis() - startTime);
+
+                if (timeoutForSelect < 0) {
+                    startTime = System.currentTimeMillis();
+
+                    for (Client client : clientLinkedList) {
+                        System.out.println(client.getHostName() + ": " +  (double) client.getCountOfBytes() / (1024 * 1024 * 1024) + " Гбайт/c");
+                        client.clearReadBytes();
+                    }
+
+                    continue;
+                }
+
                 selector.select(timeoutForSelect);
 
                 Set<SelectionKey> selectionKeySet = selector.selectedKeys();
@@ -52,27 +68,31 @@ public class Server implements Runnable {
                 while (keyIterator.hasNext()) {
                     SelectionKey selectionKey = keyIterator.next();
                     if (selectionKey.isAcceptable()) {
-                        Socket socket = serverSocket.accept();
-                        clientChannelHashMap.put(selectionKey.channel(), new Client(socket));
+                        SocketChannel socketChannel = serverSocketChannel.accept();
+                        logger.info("New client has been connected");
+
+                        socketChannel.configureBlocking(false);
+                        SelectionKey newSelectionKey = socketChannel.register(selector, SelectionKey.OP_READ);
+                        Client client = new Client(socketChannel);
+                        newSelectionKey.attach(client);
+                        clientLinkedList.add(client);
                     } else {
                         if (selectionKey.isReadable()) {
                             SocketChannel channel = (SocketChannel) selectionKey.channel();
-                            Client client = clientChannelHashMap.get(channel);
-                            int countOfReadBytes = channel.read(byteBuffer); // TODO: 06.10.16 ПРОЧИТАЛИ, НО В КАНАЛЕ ОСТАЛОСЬ ЧТО_ТО
+                            Client client = (Client) selectionKey.attachment();
+                            int countOfReadBytes;
+                            countOfReadBytes = channel.read(byteBuffer);
+                            logger.info ("New data has been read");
                             byteBuffer.rewind();
                             client.addBytes(countOfReadBytes);
                         }
                      }
-                }
 
-                if (System.currentTimeMillis() - startTime > MILLIS_TO_COUNT_SPEED)
-                    for (Map.Entry<Channel, Client> client : clientChannelHashMap.entrySet()) {
-                        System.out.println(client.getValue().getHostName() + " - " + (client.getValue().getCountOfBytes() / MILLIS_TO_COUNT_SPEED) + "байт/c");
-                        client.getValue().clearReadBytes();
-                    }
+                     keyIterator.remove();
+                }
             }
         } catch (IOException e) {
-            logger.error(e.getMessage());
+            logger.error("IO Exception" + e.getMessage());
         }
     }
 }
