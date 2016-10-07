@@ -1,7 +1,11 @@
 package ru.chirikhin.tcp2speed.server;
 
+import org.apache.log4j.Logger;
+
 public class Main {
-    private static int PORT = 12763;
+    private final static int PORT = 1234;
+    private final static Logger logger = Logger.getLogger(Main.class);
+
 
     public static void main(String[] args) {
         try {
@@ -10,8 +14,7 @@ public class Main {
             serverThread.start();
             serverThread.join();
         } catch (Throwable t) {
-            t.printStackTrace();
-            System.out.println("Error " + t.getMessage());
+            logger.error(t.getMessage());
         }
     }
 }

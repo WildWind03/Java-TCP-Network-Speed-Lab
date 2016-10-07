@@ -15,7 +15,7 @@ public class Client implements Runnable {
 
     public Client(String ip, int port) {
         if (null == ip) {
-            throw new IllegalArgumentException("ip can not be null");
+            throw new IllegalArgumentException("Ip can not be null");
         }
 
         if (port < 0) {
@@ -26,6 +26,7 @@ public class Client implements Runnable {
             channel = SocketChannel.open();
             channel.connect(new InetSocketAddress(ip, port));
         } catch (IOException e) {
+            logger.error(e.getMessage());
             throw new IllegalArgumentException("Can not create socket", e);
         }
     }
@@ -37,7 +38,6 @@ public class Client implements Runnable {
 
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                byteBuffer.clear();
                 byteBuffer.put(buffer);
                 byteBuffer.flip();
 
@@ -45,7 +45,7 @@ public class Client implements Runnable {
                     channel.write(byteBuffer);
                 }
 
-                byteBuffer.flip();
+                byteBuffer.clear();
             }
         } catch (IOException e) {
             logger.error("Can't send symbol");
