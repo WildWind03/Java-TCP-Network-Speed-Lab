@@ -56,8 +56,10 @@ public class Server implements Runnable {
 
                     for (Map.Entry<Long, Client> clientEntry: clientHashMap.entrySet()) {
                         Client client = clientEntry.getValue();
-                        System.out.println(client.getHostName() + ": " +  (double) client.getCountOfBytes() / (1024 * 1024 * 1024) + " Гбайт/c");
+                        logger.info("Period: " + ((double) client.getPeriod(System.currentTimeMillis())) / 1000);
+                        System.out.println(client.getHostName() + ": " +  ((double) client.getCountOfBytes() / (1024 * 1024 * 1024)) / ((double) client.getPeriod(System.currentTimeMillis()) / 1000) + " Гбайт/c");
                         client.clearReadBytes();
+                        client.setTime(System.currentTimeMillis());
                     }
 
                     continue;
@@ -78,6 +80,7 @@ public class Server implements Runnable {
 
                         SelectionKey newSelectionKey = socketChannel.register(selector, SelectionKey.OP_READ);
                         Client client = new Client(socketChannel);
+                        client.setTime(System.currentTimeMillis());
                         long currentId = maxId++;
 
                         newSelectionKey.attach(currentId);
@@ -89,7 +92,6 @@ public class Server implements Runnable {
                             Client client = clientHashMap.get(currentId);
 
                             int countOfReadBytes = channel.read(byteBuffer);
-
                             if (-1 == countOfReadBytes) {
                                 channel.close();
                                 clientHashMap.remove(currentId);

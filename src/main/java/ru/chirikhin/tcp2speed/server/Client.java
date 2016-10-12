@@ -6,6 +6,7 @@ public class Client {
     private final SocketChannel socketChannel;
 
     private long countOfBytes = 0;
+    private long startMillis = 0;
 
 
     public Client(SocketChannel socketChannel) {
@@ -31,5 +32,13 @@ public class Client {
 
     public long getCountOfBytes() {
         return countOfBytes;
+    }
+
+    public void setTime(long startMillis) {
+        this.startMillis = startMillis;
+    }
+
+    public long getPeriod(long currentTime) {
+        return currentTime - startMillis;
     }
 }

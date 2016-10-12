@@ -12,7 +12,7 @@ task server (dependsOn: "classes", type: JavaExec) {
 task client (dependsOn: "classes", type: JavaExec) {
     main = 'ru.chirikhin.tcp2speed.client.Main'
     classpath = sourceSets.main.runtimeClasspath
-    args '192.168.0.103'
+    args '192.168.43.4'
 }
 
 repositories {
